@@ -34,17 +34,15 @@ function Circle({children}) {
   // create circle dom object, return circle data
   function createCircle(child) {
     const radius = 40//radius || random(10, 40);
-    const x = 50 //|| random(radius, bounds.width - radius);
-    const y = 50//y || random(radius, bounds.height - radius);
+    const x = 10 //|| random(radius, bounds.width - radius);
+    const y = 10//y || random(radius, bounds.height - radius);
     const diameter = radius * 2;
-    // const circleEl = document.createElement('div');
-    // circleEl.appendChild(innerEl)
 
     return {
-      id: child.props.id,
+      id: child.props['data-id'],
       position: {
-        x: random(radius, bounds.width - radius),
-        y: random(radius, bounds.height - radius)
+        x: 150 + Math.random(),//random(radius, bounds.width - radius),
+        y: 150 + Math.random(),//random(radius, bounds.height - radius)
       },
       width: diameter + 'px',
       height: diameter + 'px',
@@ -77,13 +75,10 @@ function Circle({children}) {
 
   const circles = children.map(child => createCircle(child))
 
-  console.log(circles)
-  
-
   const packer = new CirclePacker({
     bounds,
     target,
-    circles: circles,//: circles.map(circle => circle.circle), //bypass child
+    circles,
     onMove: render,
     collisionPasses: 3,
     centeringPasses: 2,
@@ -94,14 +89,10 @@ function Circle({children}) {
 
   function render(hum) {
 
-
-
     // return
     requestAnimationFrame(function () {
 
-      for (var id in hum) {
-
-        // console.log(hum)
+      for (const id in hum) {
         
 
         var circleBoy = hum[id]//circles.find(x => x.id === id);
@@ -161,7 +152,7 @@ function Circle({children}) {
     });
   }
   // start and stop dragging
-  function circlePressed(circleEl, circle, event) {
+  function circlePressed(circleEl, circle, event, packer) {
     var circleStartPos = {
       x: parseFloat(circleEl.getAttribute('data-x')) + circle.radius,
       y: parseFloat(circleEl.getAttribute('data-y')) + circle.radius
@@ -170,7 +161,7 @@ function Circle({children}) {
 
     function dragStart() {
       document.addEventListener('mousemove', dragged);
-      document.addEventListener('mouseup', dragEnd);
+      document.addEventListener('mouseup', () => dragEnd(packer));
     }
     function dragged(event) {
       var currentPos = { x: event.clientX, y: event.clientY };
@@ -192,17 +183,19 @@ function Circle({children}) {
           newPos.x < circle.radius || newPos.x > bounds.width - circle.radius ||
           newPos.y < circle.radius || newPos.y > bounds.height - circle.radius
         ) {
-          dragEnd();
+          dragEnd(packer);
         } else {
           packer.drag(circle.id, newPos);
         }
       }
     }
-    function dragEnd() {
+
+    function dragEnd(packer) {
       isDragging = false;
       document.removeEventListener('mousemove', dragged);
       packer.dragEnd(circle.id);
     }
+
     if (!isDragging) {
       dragStart();
     }
@@ -227,40 +220,32 @@ function Circle({children}) {
             }}
             onMouseDown={(e) => { 
               const circle = circles.find(x => x.id === e.target.id)
-              console.log(circle)
-              
-              circlePressed(e.target, circle, e)
-              
+              circlePressed(e.target, circle, e, packer)
             }}
           >
+            {children.find(({props}) => props['data-id'] === el.id)}
           </div>
         ))}
       </div>
     </>
   )
-  
-
 }
 
 function App() {
-
-  
-
-  
   return (
     <div className="App">
       <article className="text">
 
         <Circle>
-          <div id="circle-1" className="circle-content">
+          <div data-id="circle-1" className="circle-content">
             <h2>circle 1</h2>
             <p>bit of content here for it</p>
           </div>
-          <div id="circle-2" className="circle-content">
+          <div data-id="circle-2" className="circle-content">
             <h2>222</h2>
             <p>hows it sllllooeong</p>
           </div>
-          <div id="circle-3" className="circle-content">
+          <div data-id="circle-3" className="circle-content">
             <h2>and a bit more</h2>
             <p>antlers are cool</p>
           </div>
