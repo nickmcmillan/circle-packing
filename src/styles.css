@@ -40,7 +40,9 @@ p {
   display: none;
   user-select: none;
   border: 4px solid palevioletred;
+  will-change: transorm;
 }
+
 .circle.is-visible {
   display: block;
   cursor: pointer;

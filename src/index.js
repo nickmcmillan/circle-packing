@@ -1,205 +1,133 @@
-import React, { useState, useEffect } from 'react'
+import React, { useRef, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 import CirclePacker from './circlepacker.es6.js'
 import './styles.css'
 
-function random(min, max, intResult) {
-  if (typeof min !== 'number' && typeof max !== 'number') {
-    min = 0;
-    max = 1;
-  }
-  if (typeof max !== 'number') {
-    max = min;
-    min = 0;
-  }
-  var result = min + Math.random() * (max - min);
-  if (intResult) {
-    result = parseInt(result, 10);
-  }
-  return result;
+
+// create circle dom object, return circle data
+function createCircle(child) {
+  const radius = 40
+  const x = 0 //|| random(radius, bounds.width - radius);
+  const y = 0//y || random(radius, bounds.height - radius);
+  const diameter = radius * 2;
+
+  return {
+    id: child.props['data-id'],
+    position: {
+      x: 150 + Math.random(),//random(radius, bounds.width - radius),
+      y: 150 + Math.random(),//random(radius, bounds.height - radius)
+    },
+    width: diameter + 'px',
+    height: diameter + 'px',
+    borderRadius: diameter + 'px',
+    x,
+    y,
+    radius,
+  };
+
 }
 
 function Circle({children}) {
 
-  var DRAG_THRESOLD = 10;
-  // var containerEl = document.querySelector('.container');
-  // references to all circle elements
-  // dimenstions of container
-  // var rect = containerEl.getBoundingClientRect();
-  const bounds = { width: 300, height: 300 };
+  const packer = useRef(null)
+  
+  const bounds = { width: 300, height: 300 }; // TODO: get dynbamic sizes
   // const bounds = { width: rect.width, height: rect.height };
-  var target = { x: bounds.width / 2, y: bounds.height / 2 };
+  const target = { x: bounds.width * 0.5, y: bounds.height * 0.5 };
   let isDragging = false
 
-  // create circle dom object, return circle data
-  function createCircle(child) {
-    const radius = 40//radius || random(10, 40);
-    const x = 10 //|| random(radius, bounds.width - radius);
-    const y = 10//y || random(radius, bounds.height - radius);
-    const diameter = radius * 2;
-
-    return {
-      id: child.props['data-id'],
-      position: {
-        x: 150 + Math.random(),//random(radius, bounds.width - radius),
-        y: 150 + Math.random(),//random(radius, bounds.height - radius)
-      },
-      width: diameter + 'px',
-      height: diameter + 'px',
-      borderRadius: diameter + 'px',
-      x,
-      y,
-      radius,
-    };
-    // create circle el
-
-    // circleEl.id = id;
-    // circleEl.style.width = diameter + 'px';
-    // circleEl.style.height = diameter + 'px';
-    // circleEl.style.borderRadius = diameter + 'px';
-    // circleEl.classList.add('circle');
-    // // store position for dragging
-    // circleEl.setAttribute('data-x', x);
-    // circleEl.setAttribute('data-y', y);
-    // circleEl.setAttribute('data-radius', radius);
-    // // start dragging
-    // circleEl.addEventListener('mousedown', function (event) {
-    //   circlePressed(circleEl, circle, event);
-    // });
-
-    // containerEl.appendChild(circleEl);
-    // circleEls[id] = circleEl;
-    // console.log(circleEl)
-
-  }
-
-  const circles = children.map(child => createCircle(child))
-
-  const packer = new CirclePacker({
-    bounds,
-    target,
-    circles,
-    onMove: render,
-    collisionPasses: 3,
-    centeringPasses: 2,
-  });
-  // packer.setDamping(0.025) //
-
-  
-
-  function render(hum) {
-
-    // return
-    requestAnimationFrame(function () {
-
-      for (const id in hum) {
-        
-
-        var circleBoy = hum[id]//circles.find(x => x.id === id);
-// /
-        // console.log({circleBoy, id, })
-        
-
-        // const currentCirc = circles.find(x => x.id === id)
-
-        var x = hum[id].position.x - hum[id].radius;
-        var y = hum[id].position.y - hum[id].radius;
-
-        // currentCirc.position.x = x
-        // currentCirc.position.y = y
-        // currentCirc.x = x
-        // currentCirc.y = y
-
-        const circleEl = document.getElementById(id)
-        circleEl.style.transform = 'translateX(' + x + 'px) translateY(' + y + 'px)';
-        
-        // store position for dragging
-        
-        circleEl.setAttribute('data-x', x);
-        circleEl.setAttribute('data-y', y);
-        // actually move the circles around
-        
-        // circleEl.classList.add('is-visible');
-
-        
-
-        // circles.forEach(one => {
-        //   one.circle.x = circleBoy.position.x - circleBoy.radius
-        //   one.circle.y = circleBoy.position.y - circleBoy.radius
-        // })
-
-        // continue
-
-        
-        // if (circleEl) {
-        //   var cock = circles.find(x => x.circle.id === id);
-
-          
-        //   var x = cock.circle.x - cock.circle.radius;
-        //   var y = cock.circle.y - cock.circle.radius;
-        //   // store position for dragging
-        //   var dataX = x
-        //   var dataY = y
-        //   // circleEl.setAttribute('data-x', x);
-        //   // circleEl.setAttribute('data-y', y);
-        //   // actually move the circles around
-        //   // circleEl.style.transform = 'translateX(' + x + 'px) translateY(' + y + 'px)';
-        //   // circleEl.classList.add('is-visible');
-
-        // }
-      }
-
-    });
-  }
   // start and stop dragging
-  function circlePressed(circleEl, circle, event, packer) {
-    var circleStartPos = {
+  function circlePressed(circleEl, circle, e) {
+    
+    const circleStartPos = {
       x: parseFloat(circleEl.getAttribute('data-x')) + circle.radius,
       y: parseFloat(circleEl.getAttribute('data-y')) + circle.radius
     };
-    var eventStartPos = { x: event.clientX, y: event.clientY };
+
+    const eventStartPos = { x: e.clientX, y: e.clientY };
 
     function dragStart() {
-      document.addEventListener('mousemove', dragged);
-      document.addEventListener('mouseup', () => dragEnd(packer));
+      document.addEventListener('mousemove', dragged)
+      document.addEventListener('mouseup', dragEnd)
     }
-    function dragged(event) {
-      var currentPos = { x: event.clientX, y: event.clientY };
-      var delta = {
+
+    function dragged(e) {
+      const currentPos = { x: e.clientX, y: e.clientY };
+      const delta = {
         x: currentPos.x - eventStartPos.x,
         y: currentPos.y - eventStartPos.y
       };
+
       // start dragging if mouse moved DRAG_THRESOLD px
-      if (!isDragging &&
-        (Math.abs(delta.x) > DRAG_THRESOLD || Math.abs(delta.y) > DRAG_THRESOLD)
-      ) {
+      if (!isDragging) {
         isDragging = true;
-        packer.dragStart(circle.id);
+        packer.current.dragStart(circle.id);
       }
-      var newPos = { x: circleStartPos.x + delta.x, y: circleStartPos.y + delta.y };
+
+      
       if (isDragging) {
         // end dragging if circle is outside the bounds
+        const newPos = { x: circleStartPos.x + delta.x, y: circleStartPos.y + delta.y };
         if (
           newPos.x < circle.radius || newPos.x > bounds.width - circle.radius ||
           newPos.y < circle.radius || newPos.y > bounds.height - circle.radius
         ) {
-          dragEnd(packer);
+          dragEnd();
         } else {
-          packer.drag(circle.id, newPos);
+          packer.current.drag(circle.id, newPos);
         }
       }
     }
 
-    function dragEnd(packer) {
+    function dragEnd() {
       isDragging = false;
       document.removeEventListener('mousemove', dragged);
-      packer.dragEnd(circle.id);
+      packer.current.dragEnd(circle.id);
     }
 
     if (!isDragging) {
       dragStart();
     }
   }
+
+  const circles = children.map(child => createCircle(child))
+
+  useEffect(() => {
+    packer.current = new CirclePacker({
+      bounds,
+      target,
+      circles,
+      onMove: render,
+      collisionPasses: 3,
+      centeringPasses: 1,
+    })
+    packer.current.setDamping(0.025)
+    
+    return () => {
+      packer.current.destroy()
+    }
+  }, [])
+
+
+  function render(update) {
+
+    requestAnimationFrame(function () {
+
+      for (const id in update) {
+        const x = update[id].position.x - update[id].radius
+        const y = update[id].position.y - update[id].radius
+
+        // bypassing reacts render method
+        const circleEl = document.getElementById(id)
+        circleEl.style.transform = `translate3d(${x}px, ${y}px, 0)`
+        
+        // store position for dragging
+        circleEl.setAttribute('data-x', x)
+        circleEl.setAttribute('data-y', y)
+      }
+    })
+  }
+  
 
   return (
     <>
@@ -218,7 +146,8 @@ function Circle({children}) {
               transform: `translate(${el.x}px, ${el.y}px)`,
               borderRadius: el.borderRadius,
             }}
-            onMouseDown={(e) => { 
+            // TODO: touch
+            onMouseDown={(e) => {
               const circle = circles.find(x => x.id === e.target.id)
               circlePressed(e.target, circle, e, packer)
             }}
