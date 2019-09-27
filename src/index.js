@@ -1,124 +1,163 @@
-import React, { useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom'
-
-
 import CirclePacker from './circlepacker.es6.js'
 import './styles.css'
 
-setTimeout(() => {
+function random(min, max, intResult) {
+  if (typeof min !== 'number' && typeof max !== 'number') {
+    min = 0;
+    max = 1;
+  }
+  if (typeof max !== 'number') {
+    max = min;
+    min = 0;
+  }
+  var result = min + Math.random() * (max - min);
+  if (intResult) {
+    result = parseInt(result, 10);
+  }
+  return result;
+}
+
+function Circle({children}) {
 
   var DRAG_THRESOLD = 10;
-  var containerEl = document.querySelector('.container');
-  var addButtonEl = document.querySelector('#add-circle');
-  var deleteButtonEl = document.querySelector('#delete-circle');
-  var randomButtonEl = document.querySelector('#random-size');
+  // var containerEl = document.querySelector('.container');
   // references to all circle elements
-  var circleEls = {};
   // dimenstions of container
-  var rect = containerEl.getBoundingClientRect();
-  const bounds = { width: rect.width, height: rect.height };
+  // var rect = containerEl.getBoundingClientRect();
+  const bounds = { width: 300, height: 300 };
+  // const bounds = { width: rect.width, height: rect.height };
   var target = { x: bounds.width / 2, y: bounds.height / 2 };
   let isDragging = false
+
+  // create circle dom object, return circle data
+  function createCircle(child) {
+    const radius = 40//radius || random(10, 40);
+    const x = 50 //|| random(radius, bounds.width - radius);
+    const y = 50//y || random(radius, bounds.height - radius);
+    const diameter = radius * 2;
+    // const circleEl = document.createElement('div');
+    // circleEl.appendChild(innerEl)
+
+    return {
+      id: child.props.id,
+      position: {
+        x: random(radius, bounds.width - radius),
+        y: random(radius, bounds.height - radius)
+      },
+      width: diameter + 'px',
+      height: diameter + 'px',
+      borderRadius: diameter + 'px',
+      x,
+      y,
+      radius,
+    };
+    // create circle el
+
+    // circleEl.id = id;
+    // circleEl.style.width = diameter + 'px';
+    // circleEl.style.height = diameter + 'px';
+    // circleEl.style.borderRadius = diameter + 'px';
+    // circleEl.classList.add('circle');
+    // // store position for dragging
+    // circleEl.setAttribute('data-x', x);
+    // circleEl.setAttribute('data-y', y);
+    // circleEl.setAttribute('data-radius', radius);
+    // // start dragging
+    // circleEl.addEventListener('mousedown', function (event) {
+    //   circlePressed(circleEl, circle, event);
+    // });
+
+    // containerEl.appendChild(circleEl);
+    // circleEls[id] = circleEl;
+    // console.log(circleEl)
+
+  }
+
+  const circles = children.map(child => createCircle(child))
+
+  console.log(circles)
   
-  var circles = [
-    createCircle(),
-    createCircle(),
-    createCircle(),
-    createCircle(),
-    createCircle()
-  ];
+
   const packer = new CirclePacker({
     bounds,
     target,
-    circles,
+    circles: circles,//: circles.map(circle => circle.circle), //bypass child
     onMove: render,
     collisionPasses: 3,
     centeringPasses: 2,
   });
-  // packer.setDamping(0.025)
-  addButtonEl.addEventListener('click', addRandomCircle);
-  deleteButtonEl.addEventListener('click', removeRandomCircle);
-  randomButtonEl.addEventListener('click', setRandomBounds);
-  function addRandomCircle() {
-    packer.addCircle(createCircle());
-  }
-  // create circle dom object, return circle data
-  function createCircle(x, y, radius) {
-    radius = radius || random(10, 40);
-    x = x || random(radius, bounds.width - radius);
-    y = y || random(radius, bounds.height - radius);
-    const diameter = radius * 2;
-    const circleEl = document.createElement('div');
+  // packer.setDamping(0.025) //
 
-    // need some sort of unique id...
-    const id = 'circle-' + random(0, 1000, true) + '-' + Date.now();
-    const circle = {
-      id,
-      radius,
-      position: {
-        x: random(radius, bounds.width - radius),
-        y: random(radius, bounds.height - radius)
-      }
-    };
-    // create circle el
+  
 
-    circleEl.id = id;
-    circleEl.style.width = diameter + 'px';
-    circleEl.style.height = diameter + 'px';
-    circleEl.style.borderRadius = diameter + 'px';
-    circleEl.classList.add('circle');
-    // store position for dragging
-    circleEl.setAttribute('data-x', x);
-    circleEl.setAttribute('data-y', y);
-    circleEl.setAttribute('data-radius', radius);
-    // start dragging
-    circleEl.addEventListener('mousedown', function (event) {
-      circlePressed(circleEl, circle, event);
-    });
+  function render(hum) {
 
-    containerEl.appendChild(circleEl);
-    circleEls[id] = circleEl;
-    return circle;
-  }
-  function removeRandomCircle() {
-    var ids = Object.keys(circleEls);
-    var idToDelete = ids[random(0, ids.length, true)];
-    removeCircle(idToDelete);
-  }
-  function setRandomBounds() {
-    bounds = {
-      width: random(200, 500, true),
-      height: random(200, 500, true)
-    };
-    containerEl.style.width = bounds.width + 'px';
-    containerEl.style.height = bounds.height + 'px';
-    packer.setBounds(bounds);
-  }
-  function removeCircle(id) {
-    packer.removeCircle(id);
 
+
+    // return
     requestAnimationFrame(function () {
-      containerEl.removeChild(circleEls[id]);
-      delete circleEls[id];
-    });
-  }
 
-  function render(circles) {
-    requestAnimationFrame(function () {
-      for (var id in circles) {
-        var circleEl = circleEls[id];
-        if (circleEl) {
-          var circle = circles[id];
-          var x = circle.position.x - circle.radius;
-          var y = circle.position.y - circle.radius;
-          // store position for dragging
-          circleEl.setAttribute('data-x', x);
-          circleEl.setAttribute('data-y', y);
-          // actually move the circles around
-          circleEl.style.transform = 'translateX(' + x + 'px) translateY(' + y + 'px)';
-          circleEl.classList.add('is-visible');
-        }
+      for (var id in hum) {
+
+        // console.log(hum)
+        
+
+        var circleBoy = hum[id]//circles.find(x => x.id === id);
+// /
+        // console.log({circleBoy, id, })
+        
+
+        // const currentCirc = circles.find(x => x.id === id)
+
+        var x = hum[id].position.x - hum[id].radius;
+        var y = hum[id].position.y - hum[id].radius;
+
+        // currentCirc.position.x = x
+        // currentCirc.position.y = y
+        // currentCirc.x = x
+        // currentCirc.y = y
+
+        const circleEl = document.getElementById(id)
+        circleEl.style.transform = 'translateX(' + x + 'px) translateY(' + y + 'px)';
+        
+        // store position for dragging
+        
+        circleEl.setAttribute('data-x', x);
+        circleEl.setAttribute('data-y', y);
+        // actually move the circles around
+        
+        // circleEl.classList.add('is-visible');
+
+        
+
+        // circles.forEach(one => {
+        //   one.circle.x = circleBoy.position.x - circleBoy.radius
+        //   one.circle.y = circleBoy.position.y - circleBoy.radius
+        // })
+
+        // continue
+
+        
+        // if (circleEl) {
+        //   var cock = circles.find(x => x.circle.id === id);
+
+          
+        //   var x = cock.circle.x - cock.circle.radius;
+        //   var y = cock.circle.y - cock.circle.radius;
+        //   // store position for dragging
+        //   var dataX = x
+        //   var dataY = y
+        //   // circleEl.setAttribute('data-x', x);
+        //   // circleEl.setAttribute('data-y', y);
+        //   // actually move the circles around
+        //   // circleEl.style.transform = 'translateX(' + x + 'px) translateY(' + y + 'px)';
+        //   // circleEl.classList.add('is-visible');
+
+        // }
       }
+
     });
   }
   // start and stop dragging
@@ -168,44 +207,65 @@ setTimeout(() => {
       dragStart();
     }
   }
-  function random(min, max, intResult) {
-    if (typeof min !== 'number' && typeof max !== 'number') {
-      min = 0;
-      max = 1;
-    }
-    if (typeof max !== 'number') {
-      max = min;
-      min = 0;
-    }
-    var result = min + Math.random() * (max - min);
-    if (intResult) {
-      result = parseInt(result, 10);
-    }
-    return result;
-  }
 
-}, 1000)
+  return (
+    <>
+      <div className="container">
+        {circles.map((el, i) => (
+          <div
+            key={i}
+            id={el.id}
+            data-x={el.x}
+            data-y={el.y}
+            data-radius={el.radius}
+            className="is-visible circle" 
+            style={{
+              width: el.width,
+              height: el.height,
+              transform: `translate(${el.x}px, ${el.y}px)`,
+              borderRadius: el.borderRadius,
+            }}
+            onMouseDown={(e) => { 
+              const circle = circles.find(x => x.id === e.target.id)
+              console.log(circle)
+              
+              circlePressed(e.target, circle, e)
+              
+            }}
+          >
+          </div>
+        ))}
+      </div>
+    </>
+  )
+  
+
+}
 
 function App() {
 
-  useEffect(() => {
-    
-    return () => {
-      
-    };
-  }, [])
+  
+
+  
   return (
     <div className="App">
       <article className="text">
-        <p className="container"></p>
-        <button id="add-circle">add circle</button>
-        <button id="delete-circle">delete circle</button>
-        <button id="random-size">random size</button>
-        {/* <div className="range-container"> */}
-          {/* <label htmlFor="damping">damping</label> */}
-          {/* <input id="damping" type="range" min="0" max="0.05" step="0.001" value="0.025" /> */}
-          {/* <span id="damping-value">0.025</span> */}
-        {/* </div> */}
+
+        <Circle>
+          <div id="circle-1" className="circle-content">
+            <h2>circle 1</h2>
+            <p>bit of content here for it</p>
+          </div>
+          <div id="circle-2" className="circle-content">
+            <h2>222</h2>
+            <p>hows it sllllooeong</p>
+          </div>
+          <div id="circle-3" className="circle-content">
+            <h2>and a bit more</h2>
+            <p>antlers are cool</p>
+          </div>
+        </Circle>
+
       </article>
       
     </div>

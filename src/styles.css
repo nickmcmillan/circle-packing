@@ -48,3 +48,8 @@ h1 {
 .circle:hover {
   background-color: #000;
 }
+
+.circle-content {
+  visibility: hidden;
+  position: absolute;
+}
