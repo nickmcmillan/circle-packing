@@ -1,39 +1,26 @@
 import React, { useRef, useEffect } from 'react'
 import ReactDOM from 'react-dom'
+import useComponentSize from '@rehooks/component-size'
+
 import CirclePacker from './circlepacker.es6.js'
+import createCircle from './createCircle'
 import './styles.css'
 
+function CirclePackerComponent({ 
+  children,
+  className,
+  collisionPasses = 3,
+  centeringPasses = 1,
+  damping = 0.025,
+}) {
 
-// create circle dom object, return circle data
-function createCircle(child) {
-  const radius = 40
-  const x = 0 //|| random(radius, bounds.width - radius);
-  const y = 0//y || random(radius, bounds.height - radius);
-  const diameter = radius * 2;
-
-  return {
-    id: child.props['data-id'],
-    position: {
-      x: 150 + Math.random(),//random(radius, bounds.width - radius),
-      y: 150 + Math.random(),//random(radius, bounds.height - radius)
-    },
-    width: diameter + 'px',
-    height: diameter + 'px',
-    borderRadius: diameter + 'px',
-    x,
-    y,
-    radius,
-  };
-
-}
-
-function Circle({children}) {
+  let ref = useRef(null)
+  let circleRef = useRef(null)
+  let bounds = useComponentSize(ref)
 
   const packer = useRef(null)
   
-  const bounds = { width: 300, height: 300 }; // TODO: get dynbamic sizes
-  // const bounds = { width: rect.width, height: rect.height };
-  const target = { x: bounds.width * 0.5, y: bounds.height * 0.5 };
+  
   let isDragging = false
 
   // start and stop dragging
@@ -58,12 +45,10 @@ function Circle({children}) {
         y: currentPos.y - eventStartPos.y
       };
 
-      // start dragging if mouse moved DRAG_THRESOLD px
       if (!isDragging) {
         isDragging = true;
         packer.current.dragStart(circle.id);
       }
-
       
       if (isDragging) {
         // end dragging if circle is outside the bounds
@@ -90,23 +75,25 @@ function Circle({children}) {
     }
   }
 
-  const circles = children.map(child => createCircle(child))
-
+  const circles = children.map(child => createCircle(child, bounds))
+  
   useEffect(() => {
+    const target = { x: bounds.width * 0.5, y: bounds.height * 0.5 };
+    
     packer.current = new CirclePacker({
       bounds,
       target,
       circles,
       onMove: render,
-      collisionPasses: 3,
-      centeringPasses: 1,
+      collisionPasses,
+      centeringPasses,
     })
-    packer.current.setDamping(0.025)
+    packer.current.setDamping(damping)
     
     return () => {
       packer.current.destroy()
     }
-  }, [])
+  }, [bounds, circles, collisionPasses, centeringPasses, damping])
 
 
   function render(update) {
@@ -127,36 +114,46 @@ function Circle({children}) {
       }
     })
   }
-  
 
   return (
-    <>
-      <div className="container">
-        {circles.map((el, i) => (
-          <div
-            key={i}
-            id={el.id}
-            data-x={el.x}
-            data-y={el.y}
-            data-radius={el.radius}
-            className="is-visible circle" 
-            style={{
-              width: el.width,
-              height: el.height,
-              transform: `translate(${el.x}px, ${el.y}px)`,
-              borderRadius: el.borderRadius,
-            }}
-            // TODO: touch
-            onMouseDown={(e) => {
-              const circle = circles.find(x => x.id === e.target.id)
-              circlePressed(e.target, circle, e, packer)
-            }}
-          >
-            {children.find(({props}) => props['data-id'] === el.id)}
-          </div>
-        ))}
-      </div>
-    </>
+    <div className={`circle-container ${className}`} ref={ref}>
+      {circles.map(el => (
+        <div
+          key={el.id}
+          ref={circleRef}
+          id={el.id}
+          data-x={el.x}
+          data-y={el.y}
+          data-radius={el.radius}
+          className="circle" 
+          style={{
+            width: `${el.diameter}px`,
+            height: `${el.diameter}px`,
+            // transform: `translate3d(${el.position.x}px, ${el.position.y}px, 0)`,
+            borderRadius: `${el.diameter}px`,
+          }}
+          // TODO: touch
+          onMouseDown={(e) => {
+            const circle = circles.find(x => x.id === e.target.id)
+            circlePressed(e.target, circle, e)
+          }}
+        >
+          {children.map(child => {
+            console.log(child.key, el.id)
+            
+            if (child.key === el.id) {
+              return (
+              <div className="test">
+                {child}
+              </div>
+
+              )
+            }
+          })}
+          
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -165,20 +162,26 @@ function App() {
     <div className="App">
       <article className="text">
 
-        <Circle>
-          <div data-id="circle-1" className="circle-content">
+        <CirclePackerComponent
+          className="wrappeyboy"
+          centeringPasses={3}
+          collisionPasses={3}
+          damping={0.008}
+        >
+
+          <div key="circle-1" className="circle-content" data-x={-900} data-y={-200}>
             <h2>circle 1</h2>
             <p>bit of content here for it</p>
           </div>
-          <div data-id="circle-2" className="circle-content">
+          <div key="circle-2" className="circle-content" data-x={0} data-y={0}>
             <h2>222</h2>
             <p>hows it sllllooeong</p>
           </div>
-          <div data-id="circle-3" className="circle-content">
+          <div key="circle-3" className="circle-content" data-x={50} data-y={-50}>
             <h2>and a bit more</h2>
             <p>antlers are cool</p>
           </div>
-        </Circle>
+        </CirclePackerComponent>
 
       </article>
       
