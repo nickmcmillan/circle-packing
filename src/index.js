@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 import useComponentSize from '@rehooks/component-size'
 
-import CirclePacker from './circlepacker.es6.js'
+import CirclePacker from 'circlepacker'
 import createCircle from './createCircle'
 import './styles.css'
 
